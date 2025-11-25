@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POLLD: WLS Kadingilan Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #1d269b;
+            color: #d4d4d4;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            margin: 0;
+            overflow: hidden;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            color: #fff;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em; /* Smaller heading for mobile */
+            padding: 10px;
+        }
+
+        h1 img {
+            max-height: 40px; /* Adjust logo size for mobile */
+            margin-right: 10px;
+        }
+
+        #chartContainer {
+            background: #1c003d;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            margin-bottom: 10px;
+            height: 300px; /* Adjusted height for mobile */
+        }
+
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        footer {
+            background-color: #1d269b;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        /* Clock Styles */
+        .clock {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            margin: 10px auto;
+        }
+
+        .clock-face {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Gare_de_Lyon_Clock.jpg/660px-Gare_de_Lyon_Clock.jpg');
+            background-size: cover;
+            border-radius: 50%;
+        }
+
+        .number {
+            position: absolute;
+            font-size: 14px;
+            color: #fff;
+            text-align: center;
+            font-family: Arial;
+        }
+
+        .twelve { top: 6px; left: 50%; transform: translateX(-50%); }
+        .three { top: 50%; right: 6px; transform: translateY(-50%); }
+        .six { bottom: 6px; left: 50%; transform: translateX(-50%); }
+        .nine { top: 50%; left: 6px; transform: translateY(-50%); }
+
+        .hand {
+            position: absolute;
+            transform-origin: 50% 50%;
+            border-radius: 5px;
+        }
+
+        .hour-hand {
+            width: 4px;
+            height: 60%;
+            top: 15%;
+            left: 48%;
+            background-color: black;
+        }
+
+        .minute-hand {
+            width: 3px;
+            height: 40%;
+            top: 25%;
+            left: 48%;
+            background-color: gray;
+        }
+
+        .second-hand {
+            width: 1px;
+            height: 35%;
+            top: 30%;
+            left: 48%;
+            background-color: red;
+        }
+
+        .digital-clock {
+            font-size: 16px;
+            margin-top: 5px;
+        }
+
+        #waterLevelFooter {
+            font-size: 16px;
+            margin-top: 5px;
+            color: yellow;
+            font-weight: bold;
+        }
+
+        /* Left Pane Styles for Mobile */
+        .left-pane {
+            width: 100%; /* Full width */
+            padding: 10px;
+            background-color: #1d269b;
+            color: #fff;
+            text-align: center;
+        }
+
+        /* Main Content Styles for Mobile */
+        .container {
+            width: 100%;
+            margin: 0;
+            overflow: hidden;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="display:flex; flex-direction: column; width:100%;">
+
+        <div class="left-pane">
+            <div class="clock">
+                <div class="clock-face">
+                    <div class="number twelve">12</div>
+                    <div class="number three">3</div>
+                    <div class="number six">6</div>
+                    <div class="number nine">9</div>
+                    <div class="hand hour-hand"></div>
+                    <div class="hand minute-hand"></div>
+                    <div class="hand second-hand"></div>
+                </div>
+            </div>
+
+            <div class="digital-clock" id="digitalClock"></div>
+            <div class="divider"></div>
+            <div id="waterLevelFooter"></div>
+        </div>
+
+        <div class="container">
+            <h1>
+                <img src="logo.png" alt="POLLD Logo"/>
+                WLS Kadingilan Dashboard
+            </h1>
+            <div id="chartContainer">
+                <canvas id="floodChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        &copy; 2025 POLLD® Emergency System Corporation
+    </footer>
+
+    <script>
+        const floodData = [
+  { "dateTime": "11-22 12:14 PM", "level": -0.83 },
+  { "dateTime": "11-22 01:19 PM", "level": -0.82 },
+  { "dateTime": "11-22 02:25 PM", "level": -0.82 },
+  { "dateTime": "11-22 03:30 PM", "level": -0.82 },
+  { "dateTime": "11-22 04:36 PM", "level": -0.82 },
+  { "dateTime": "11-22 05:41 PM", "level": -0.83 },
+  { "dateTime": "11-22 06:47 PM", "level": -0.83 },
+  { "dateTime": "11-22 07:52 PM", "level": -0.83 },
+  { "dateTime": "11-22 08:58 PM", "level": -0.78 },
+  { "dateTime": "11-22 10:03 PM", "level": -0.75 },
+  { "dateTime": "11-22 11:09 PM", "level": -0.73 },
+  { "dateTime": "11-23 12:14 AM", "level": -0.71 },
+  { "dateTime": "11-23 01:46 AM", "level": -0.83 },
+  { "dateTime": "11-23 02:52 AM", "level": -0.81 },
+  { "dateTime": "11-23 03:57 AM", "level": -0.81 },
+  { "dateTime": "11-23 05:03 AM", "level": -0.83 },
+  { "dateTime": "11-23 06:08 AM", "level": -0.82 },
+  { "dateTime": "11-23 07:14 AM", "level": -0.82 },
+  { "dateTime": "11-23 08:19 AM", "level": -0.82 },
+  { "dateTime": "11-23 09:25 AM", "level": -0.80 },
+  { "dateTime": "11-23 10:30 AM", "level": -0.75 },
+  { "dateTime": "11-23 11:36 AM", "level": -0.71 },
+  { "dateTime": "11-23 12:41 PM", "level": -0.68 },
+  { "dateTime": "11-23 01:47 PM", "level": -0.67 },
+  { "dateTime": "11-23 02:52 PM", "level": -0.68 },
+  { "dateTime": "11-23 03:58 PM", "level": -0.71 },
+  { "dateTime": "11-23 05:03 PM", "level": -0.75 },
+  { "dateTime": "11-23 06:09 PM", "level": -0.66 },
+  { "dateTime": "11-23 07:14 PM", "level": -0.54 },
+  { "dateTime": "11-23 09:25 PM", "level": -0.64 },
+  { "dateTime": "11-23 10:31 PM", "level": -0.68 },
+  { "dateTime": "11-23 11:37 PM", "level": -0.69 },
+  { "dateTime": "11-24 12:42 AM", "level": -0.72 },
+  { "dateTime": "11-24 01:19 AM", "level": -0.71 },
+  { "dateTime": "11-24 02:24 AM", "level": -0.73 },
+  { "dateTime": "11-24 03:30 AM", "level": -0.73 },
+  { "dateTime": "11-24 04:35 AM", "level": -0.74 },
+  { "dateTime": "11-24 05:41 AM", "level": -0.75 },
+  { "dateTime": "11-24 06:46 AM", "level": -0.76 },
+  { "dateTime": "11-24 07:52 AM", "level": -0.75 },
+  { "dateTime": "11-24 08:57 AM", "level": -0.76 },
+  { "dateTime": "11-24 10:03 AM", "level": -0.76 },
+  { "dateTime": "11-24 11:08 AM", "level": -0.74 },
+  { "dateTime": "11-24 12:14 PM", "level": -0.72 },
+  { "dateTime": "11-24 01:19 PM", "level": -0.74 },
+  { "dateTime": "11-24 05:17 PM", "level": -0.59 },
+  { "dateTime": "11-24 05:41 PM", "level": -0.62 },
+  { "dateTime": "11-24 06:47 PM", "level": -0.64 },
+  { "dateTime": "11-24 07:52 PM", "level": -0.65 },
+  { "dateTime": "11-24 08:58 PM", "level": -0.65 },
+  { "dateTime": "11-24 10:03 PM", "level": -0.65 },
+  { "dateTime": "11-24 11:09 PM", "level": -0.67 },
+  { "dateTime": "11-25 12:14 AM", "level": -0.65 },
+  { "dateTime": "11-25 01:20 AM", "level": -0.65 },
+  { "dateTime": "11-25 02:25 AM", "level": -0.66 },
+  { "dateTime": "11-25 03:31 AM", "level": -0.69 },
+  { "dateTime": "11-25 04:36 AM", "level": -0.70 },
+  { "dateTime": "11-25 05:42 AM", "level": -0.71 },
+  { "dateTime": "11-25 06:47 AM", "level": -0.70 },
+  { "dateTime": "11-25 07:53 AM", "level": -0.69 },
+  { "dateTime": "11-25 08:58 AM", "level": -0.65 }
+];
+
+        const dateTimeLabels = floodData.map(item => item.dateTime);
+        const waterLevels = floodData.map(item => item.level);
+
+        const ctx = document.getElementById('floodChart').getContext('2d');
+        const myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dateTimeLabels,
+                datasets: [{
+                    label: 'Water Level',
+                    data: waterLevels,
+                    borderColor: 'yellow',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            color: '#fff',
+                            text: 'DateTime'
+                        },
+                        ticks: {
+                            color: '#fff'
+                        },
+                        grid: {
+                            color: 'rgba(255,255,255,0.1)'
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            color: '#fff',
+                            text: 'Water Level (m)'
+                        },
+                        ticks: {
+                            color: '#fff'
+                        },
+                        grid: {
+                            color: 'rgba(255,255,255,0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#fff'
+                        }
+                    }
+                }
+            }
+        });
+
+	 // Clock functionality
+	function clock() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+            const hourRotation = (hours % 12 + minutes / 60) * 30;
+            const minuteRotation = (minutes + seconds / 60) * 6;
+            const secondRotation = seconds * 6;
+            document.querySelector('.hour-hand').style.transform = `rotate(${hourRotation}deg)`;
+            document.querySelector('.minute-hand').style.transform = `rotate(${minuteRotation}deg)`;
+            document.querySelector('.second-hand').style.transform = `rotate(${secondRotation}deg)`;
+
+	    // Digital clock update
+            const timeString = now.toLocaleTimeString();
+            document.getElementById('digitalClock').textContent = timeString;
+       	}
+
+	setInterval(clock, 1000);
+
+	// Function to update the water level footer
+        function updateWaterLevelFooter() {
+            const currentLevel = floodData[floodData.length - 1].level;
+            document.getElementById('waterLevelFooter').textContent = `Water Level: ${currentLevel}m`;
+        }
+        // Call the function to update the footer initially and then every few seconds
+        updateWaterLevelFooter();
+        setInterval(updateWaterLevelFooter, 5000); // Update every 5 seconds
+    </script>
+</body>
+</html>
